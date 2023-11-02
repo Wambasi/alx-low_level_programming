@@ -1,44 +1,35 @@
-#include "main.h"
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
-/**
- * read_textfile - reads a text file and prints it to the POSTX standard output
- * @filename: the name of the file to read
- * @letters: the number of letters it should read and print
- *
- * Return: the actual number of letters it can read and print
- */
-ssize_t read_textfile(const char *filename, size_t letters)
-{
-	int fd;
-	ssize_t lenr, lenw;
-	char *buffer;
+ssize_t read_textfile(const char *filename, size_t letters) {
+    if (filename == NULL) {
+        return 0;
+    }
 
-	if (filename == NULL)
-		return (0);
-	fd = open(filename, 0_RDONLY);
-	if (fd == -1)
-		return (0);
-	buffer = malloc(sizeof(char) * letters);
-	if (buffer == NULL)
-	{
-		close(fd);
-		return (0);
-	}
-	lenr = read(fd, buffer, letters);
-	close(fd);
-	if (lenr == -1)
-	{
-		free(buffer);
-		return (0);
-	}
-	lenw = write(STDOUT_FILENO, buffer, lenr);
-	free(buffer);
-	if (lenr != lenw)
-		return (0);
-	return (lenw);
+    FILE *file = fopen(filename, "r");
+    if (file == NULL) {
+        return 0;
+    }
+
+    size_t total_read = 0;
+    char buffer[letters];
+    ssize_t read_size;
+
+    while (total_read < letters) {
+        read_size = fread(buffer, 1, letters - total_read, file);
+
+        if (read_size == 0) {
+            break;
+        }
+
+        total_read += read_size;
+        if (write(STDOUT_FILENO, buffer, read_size) != read_size) {
+            fclose(file);
+            return 0;
+        }
+    }
+
+    fclose(file);
+    return total_read;
 }
